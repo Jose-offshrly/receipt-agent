@@ -2,7 +2,7 @@ import base64
 from io import BytesIO
 import os, random, string
 from PIL import Image
-from models.receipt import Receipt
+from config import config
 
 def random_alphanumeric(length=10):
     """Generate a random alphanumeric string."""
@@ -36,13 +36,16 @@ def save_uploaded_file(uploaded_file, save_dir):
     return file_path
 
 
-def parse_receipt(image_upload) -> Receipt:
+def parse_receipt(uploaded_file):
     import requests
-    
-    files = {"file": (image_upload.name, image_upload, image_upload.type)}
-    data = { "account": "Healthcare" }
-    url = "http://0.0.0.0:8003/api/v1/transcribe/receipt"
-    response = requests.post(url, files=files, data=data)
-    data = response.json()
 
-    return Receipt(**data["receipt"])
+    api_url = f"{config.TRANSCRIPTION_API}/receipt"
+    
+    # Prepare file and data
+    files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
+
+    try: 
+        response = requests.post(api_url, files=files)
+        return response.json()
+    except BaseException:
+        return None

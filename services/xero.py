@@ -19,7 +19,9 @@ def accounting_create_receipt(receipts: dict):
 
         response = requests.post(url, json=receipts, headers=headers)
         if response.status_code == 200:
-            return response.json()
+            response = response.json()
+            print("Xero api respond: ", response)
+            return response
 
         elif response.status_code >= 400 and response.status_code < 500:
             new_token = generate_token(token.refresh_token)

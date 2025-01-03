@@ -24,21 +24,18 @@ def save_receipt_to_xero(receipt: ReceiptLLM) -> str:
     """This tool accepts receipt data and save to xero"""
 
     try:
-
-        line_items = [item.as_xero() for item in receipt.line_items]
+        receipt = receipt.model_dump()
 
         receipts = {
             "Receipts": [
                 {
-                    "Date": receipt.date,
-                    "LineItems": line_items,
-                    "Contact": {
-                        "ContactID": config.contact_id
-                    },
+                    "Date": receipt["Date"],
+                    "LineItems": receipt["LineItems"],
+                    "Contact": receipt["Contact"],
                     "User": {
                         "UserID": config.user_id
                     },
-                    "LineAmountTypes": receipt.line_amount_types,
+                    # "LineAmountTypes": receipt["LineAmountTypes"],
                     # "SubTotal": receipt.subtotal,
                     # "TotalTax": receipt.total_tax,
                     # "Total": receipt.subtotal,
@@ -80,16 +77,6 @@ prompt = ChatPromptTemplate(
     [
         SystemMessage(content=(
             "You are an assistant expert for parsing and saving receipt to xero"
-            "If image url is included in user input, parse it very specific instruction and schema below:\n"
-            "Receipts might not always provide the Unit amount and Line amount," 
-            "Always refer to overall total and tax, calculate the list items and compare to determine whether the item price is unit or line amount"
-            "That will prevent instances where prices are doubled when quantity is 2 or more" 
-            "Majority of the time the price displayed is line amount, in that case leave the unit price as empty value, vice versa"
-            "Analyze the computation overall to properly fill the values, accuracy is important here"
-            "Additionaly, make sure to add other fees except Taxes as ListItem for example 'Admin Fee', 'Tips' etc."
-            "Additionally, any fees (e.g., 'Admin Fee', 'Tips') should be treated as list items and should always have a unit amount with quantity 1."
-            "Do not include tax in the list items. Ensure that additional fees are not mistakenly included in the tax total.\n\n"
-            "The tax total will always explicitly mention that it is tax, so do not get confused.\n\n"
             
             "Carefully analyze the entire receipt and map the information to the following schema. "
             "Use this format:\n"
@@ -101,11 +88,12 @@ prompt = ChatPromptTemplate(
             """
                 Here’s a summary of the important details from your [name of bill] receipt. This breakdown highlights the key charges and payment information.
 
-                [display here the only needed details in bullet points (not very detailed)]
+                [display here the very short summary of receipt, keep it 8 bullet points at most, list items purchased in bullet points, FInally compact the list]
                 
                 To help categorize this receipt properly, please choose a Category from the dropdown below.
             """
-            "'Category' or 'Account' will be treated as the same" 
+
+            "\n\n'Category' or 'Account' will be treated as the same" 
             "If account/category is given by user, use the tool provided to get more info before and automatically save the receipt to xero"
         )),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -128,7 +116,7 @@ def invoke(query: HumanMessage, memory: FileChatMessageHistory) -> AIMessage:
 
     ai_message = AIMessage(response["output"], id=random_alphanumeric())
 
-    if isinstance(query.content, list):
+    if query.additional_kwargs.get("attachment"):
         ai_message.response_metadata = {
             "category": "NOT_SET"
         }

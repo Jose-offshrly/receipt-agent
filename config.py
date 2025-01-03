@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     user_id: str = os.getenv("user_id")
     contact_id: str = os.getenv("contact_id")
 
+    TRANSCRIPTION_API: str = os.getenv("TRANSCRIPTION_API")
+
 
 
 config = Settings()
