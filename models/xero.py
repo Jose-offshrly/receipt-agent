@@ -36,40 +36,16 @@ class LineItemLLM(BaseModel):
     Quantity: int = Field(default=1, description="Quantity of the item.")
     AccountCode: str = Field(description="This field is related to xero, the account code of expense category")
     AccountId: str = Field(description="This field is related to xero, the account id of expense category")
-
-    # def as_xero(self) -> dict:
-    #     return {
-    #         "Description": self.description,
-    #         "UnitAmount": self.unit_amount,
-    #         "AccountCode": self.account_code,
-    #         "Quantity": self.quantity,
-    #         "LineAmount": self.line_amount
-    #     }
-        # LineItem(
-        #     description=self.description,
-        #     unit_amount=self.unit_amount,
-        #     quantity=self.quantity,
-        #     account_code=self.account_code,
-        #     account_id=self.account_id
-        # )
-    # clarify it to prompt that other will be treated as line item such as admin fee
-    
-    # discount_rate: Optional[Any] = Field(None, description="Discount rate applied to the line item.")
-    # discount_amount: Optional[Any] = Field(None, description="Discount amount applied to the line item.")
-    
-    # tax_rate: float = Field(description=f"The tax rate applied on the receipt")
-    # tax_amount: Optional[Any] = Field(None, description="Amount of tax applied to the line item.")
-    
-
+    IsTaxable: bool = Field(description="whether item is subject to tax, Item is taxable if there is tax_rate or total tax and not part of additional fees ie admin fee etc")
 
 class ReceiptLLM(BaseModel):
     # receipt_from: Optional[str] = Field(description="The provider of the receipt")
-    Contact: ContactLLM = Field(description="Contact info of the business or individual.")
+    Contact: ContactLLM = Field(description="ContaTaxRatesct info of the business or individual.")
     Date: str = Field(description="Date of receipt – YYYY-MM-DD")
     Reference: Optional[str] = Field(description="Additional reference number")
     
     # highlight this in prompt
-    LineAmountTypes: Literal["Exclusive", "Inclusive", "NoTax"] = Field(description="The type of tax in the receipt")
+    LineAmountTypes: Literal["Exclusive", "Inclusive"] = Field(description="The type of tax in the receipt")
     
     SubTotal: str = Field(description="Total of receipt excluding taxes")
     TotalTax: Optional[str] = Field(default=None, description="Total tax on receipt")
@@ -77,6 +53,12 @@ class ReceiptLLM(BaseModel):
     Total: str = Field(description="Total of receipt tax inclusive (i.e. SubTotal + TotalTax)")
     
     LineItems: list[LineItemLLM] = Field(description="List of line item included in receipt")
+    TaxRate: Optional[float] = Field(None, description="The tax rate of receipt in percentage")
+    # TaxType: Literal[
+    #     "Sales Tax", 
+    #     "VAT",
+    #     "GST"
+    # ] = Field(default="VAT", description="the tax type of the receipt")
 
 
 

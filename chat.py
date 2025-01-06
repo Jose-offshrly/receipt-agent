@@ -13,6 +13,8 @@ from services.xero import accounting_create_receipt
 from langchain_core.output_parsers import JsonOutputParser
 from config import config
 
+from services.xero import get_or_create_tax_rate
+
 def random_alphanumeric(length=10):
     """Generate a random alphanumeric string."""
     characters = string.ascii_letters + string.digits
@@ -25,6 +27,11 @@ def save_receipt_to_xero(receipt: ReceiptLLM) -> str:
 
     try:
         receipt = receipt.model_dump()
+        tax_type = "NoTax"
+
+        if receipt["TaxRate"] and receipt["TaxRate"] > 0:
+            tax_type = f"VAT ({receipt['TaxRate']})%"
+            get_or_create_tax_rate(tax_type, receipt["TaxRate"])
 
         receipts = {
             "Receipts": [
@@ -35,7 +42,7 @@ def save_receipt_to_xero(receipt: ReceiptLLM) -> str:
                     "User": {
                         "UserID": config.user_id
                     },
-                    # "LineAmountTypes": receipt["LineAmountTypes"],
+                    "LineAmountTypes": receipt["LineAmountTypes"],
                     # "SubTotal": receipt.subtotal,
                     # "TotalTax": receipt.total_tax,
                     # "Total": receipt.subtotal,
@@ -77,10 +84,14 @@ prompt = ChatPromptTemplate(
     [
         SystemMessage(content=(
             "You are an assistant expert for parsing and saving receipt to xero"
+            "Carefully analyze the receipt and use your knowledge on receipt to identify crucial components of receipts"
+            "Focus on Line Items, Price, Qty, Tax, Tax Type and how they relate to each other for accurate calculation and identification"
             
-            "Carefully analyze the entire receipt and map the information to the following schema. "
-            "Use this format:\n"
-            "{jsonformat}"
+            "Additional important instructions: \n"
+            "1. 'TaxType' field: "
+            "- Base the TaxType on this following fields: 'tax_rate', 'subtotal', 'total_tax', 'category'"
+            "- Consider the given category/Account type of user to identify appropriate tax type, example receipt might be related to buying rathen than selling"
+            "- Verify these pointers before saving to xero"
             "\n\n\n"
             
 
