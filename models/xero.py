@@ -35,7 +35,6 @@ class LineItemLLM(BaseModel):
     LineAmount: Optional[str] = Field(default=None, description="Total item price, it may be empty if price is listed as line_amount")
     Quantity: int = Field(default=1, description="Quantity of the item.")
     AccountCode: str = Field(description="This field is related to xero, the account code of expense category")
-    AccountId: str = Field(description="This field is related to xero, the account id of expense category")
     IsTaxable: bool = Field(description="whether item is subject to tax, Item is taxable if there is tax_rate or total tax and not part of additional fees ie admin fee etc")
 
 class ReceiptLLM(BaseModel):
@@ -53,7 +52,8 @@ class ReceiptLLM(BaseModel):
     Total: str = Field(description="Total of receipt tax inclusive (i.e. SubTotal + TotalTax)")
     
     LineItems: list[LineItemLLM] = Field(description="List of line item included in receipt")
-    TaxRate: Optional[float] = Field(None, description="The tax rate of receipt in percentage")
+    TaxRate: float = Field(default=0.00, description="The tax rate of receipt. Look for 'tax_rate' field in the receipt.")
+    TaxType: Literal["VAT", "GST"] = Field(description="The type of tax given on the receipt, refer to the given category/account type to determine correct tax type. It will be always related to Expense")
     # TaxType: Literal[
     #     "Sales Tax", 
     #     "VAT",

@@ -23,6 +23,7 @@ def generate_token(refresh_token: str) -> Auth:
 
     if response.status_code == 200:
         token_data = response.json()
+        print(token_data)
         auth = Auth(**token_data)
 
         with open("credentials/auth.json", "w") as f:

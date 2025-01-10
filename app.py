@@ -10,10 +10,12 @@ from langchain_core.messages import HumanMessage, BaseMessage
 from langchain_community.chat_message_histories.file import FileChatMessageHistory
 from config import config
 from utils import parse_receipt
-
+import uuid
 from data import load_accounts
 
 accounts = load_accounts()
+
+active_context = ""
 
 
 memory = FileChatMessageHistory("data/memory.json")
@@ -41,11 +43,12 @@ def handle_category_select(category):
         "hidden": True
     }
 
-    memory.add_message(message=message)
+    # memory.add_message(message=message)
 
     assistant = chat.invoke(
         query=message, 
-        memory=memory
+        memory=memory,
+        active_context=active_context
     )
 
     display_message(assistant)
@@ -99,7 +102,7 @@ def handle_upload_change():
         if response is None:
             st.error(f"Failed to process file: {response.status_code} - {response.text}")
         else:
-            context = response["receipt"]
+            active_context = json.dumps(response["receipt"])
 
      
             img_type = st.session_state.uploaded_file.type
@@ -107,10 +110,11 @@ def handle_upload_change():
             image_base64 = get_image_base64(raw_img)
 
             message = HumanMessage(
-                content=json.dumps(context), 
+                content="", 
                 id=random_alphanumeric(),
                 additional_kwargs={
                     "attachment": {
+                        "file_id": str(uuid.uuid4()),
                         "type": "receipt",
                         "image_url": {"url": f"data:{img_type};base64,{image_base64}"}
                     }
@@ -118,11 +122,11 @@ def handle_upload_change():
             )
 
             display_message(message)
-            memory.add_message(message)
 
             assistant = chat.invoke(
                 query=message, 
-                memory=memory
+                memory=memory,
+                active_context=active_context
             )
 
             display_message(assistant)
@@ -156,7 +160,8 @@ with col2:
 
         assistant = chat.invoke(
             query=message, 
-            memory=memory
+            memory=memory,
+            active_context=active_context
         )
 
         display_message(assistant)
