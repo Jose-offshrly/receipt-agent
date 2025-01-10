@@ -1,4 +1,4 @@
-import requests
+import requests, json
 from xero_python.exceptions.http_status_exceptions import AccountingBadRequestException
 from config import config
 from services.auth import load_credentials, generate_token
@@ -128,3 +128,10 @@ def get_or_create_tax_rate(name, rate):
         print("Tax Rate does not exist, creating...")
         tax = create_tax(name, rate)
         return tax
+    
+def load_accounts():
+    # Read and load the JSON file into a dictionary
+    input_file = "data/accounts.json"
+    with open(input_file, "r") as file:
+        accounts = json.load(file)
+        return accounts

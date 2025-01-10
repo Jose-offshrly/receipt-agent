@@ -4,14 +4,14 @@ load_dotenv()
 import requests, json
 import streamlit as st
 from PIL import Image
-import chat
+import uuid
 from utils import get_image_base64, random_alphanumeric
 from langchain_core.messages import HumanMessage, BaseMessage
 from langchain_community.chat_message_histories.file import FileChatMessageHistory
 from config import config
 from utils import parse_receipt
-import uuid
-from data import load_accounts
+from agents import receipt as receipt_agent
+from services.xero import load_accounts
 
 accounts = load_accounts()
 
@@ -45,7 +45,7 @@ def handle_category_select(category):
 
     # memory.add_message(message=message)
 
-    assistant = chat.invoke(
+    assistant = receipt_agent.invoke(
         query=message, 
         memory=memory,
         active_context=active_context
@@ -123,7 +123,7 @@ def handle_upload_change():
 
             display_message(message)
 
-            assistant = chat.invoke(
+            assistant = receipt_agent.invoke(
                 query=message, 
                 memory=memory,
                 active_context=active_context
@@ -158,7 +158,7 @@ with col2:
 
         display_message(message)
 
-        assistant = chat.invoke(
+        assistant = receipt_agent.invoke(
             query=message, 
             memory=memory,
             active_context=active_context
