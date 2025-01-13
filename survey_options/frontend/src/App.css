@@ -1,0 +1,13 @@
+/* App.css */
+.btn-container {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .btn-container button {
+    padding: 4px 8px;
+    cursor: pointer;
+    background-color: #fff;
+    border: 1px solid #444;
+  }
+  

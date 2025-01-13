@@ -1,0 +1,21 @@
+{
+  "survey_about": "working hours",
+  "questions": [
+    {
+      "question_number": 1,
+      "question": "How satisfied are you with your current working hours?"
+    },
+    {
+      "question_number": 2,
+      "question": "Do you feel satisfied about your current work-life balance?"
+    },
+    {
+      "question_number": 3,
+      "question": "How satisfied are you with the flexibility of your working hours?"
+    },
+    {
+      "question_number": 4,
+      "question": "How satisfied are you with the communication about your scheduled hours?"
+    }
+  ]
+}
