@@ -92,7 +92,6 @@ def load_sample_data():
 
 
 def invoke(query: HumanMessage, memory: ChatMessageHistory):
-    print("query", query)
 
     survey_data_str = json.dumps(load_sample_data())
 
