@@ -25,6 +25,19 @@ name, authentication_status, username = authenticator.login('Login', 'main')
 def render():
     memory = FileChatMessageHistory(f"data/{username}_survey_memory.json")
 
+    if authentication_status:
+        with st.sidebar:
+            st.text("Make sure to clear chat, to save tokens")
+
+            def clear():
+                if memory:
+                    memory.clear()
+            st.button("Clear Chat", on_click=clear)
+    
+            st.divider()
+
+    authenticator.logout('Logout', 'sidebar')
+
     message_container = st.container(height=700, border=False)
 
 
@@ -75,14 +88,10 @@ def render():
 
         display_message(assistant)
 
-with st.sidebar:
-    st.text("Make sure to clear chat, to save tokens")
-    st.button("Clear chat")
+    
 
 def main():
     if authentication_status:
-        authenticator.logout('Logout', 'sidebar')
-
         render()
 
     elif authentication_status == False:
