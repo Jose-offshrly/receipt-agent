@@ -103,8 +103,11 @@ def render():
 
 
     ####################################### Text Query
-
-    query = st.chat_input("Say something")
+    if len(memory.messages) == 0:
+        placeholder = "Try 'Create survey about working hours'"
+    else:
+        placeholder = "Say something"
+    query = st.chat_input(placeholder=placeholder)
     if query:
 
         message = HumanMessage(content=query, id=str(uuid.uuid4()))
