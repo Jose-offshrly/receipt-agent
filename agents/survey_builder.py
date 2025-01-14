@@ -43,26 +43,25 @@ system_prompt = """
         
         **1. [first question here]?**
 
-        <div style="display: flex; justify-content: space-around; margin-bottom: 10px;">
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Very Satisfied</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Satisfied</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Neutral</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Dissatisfied</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Very Dissatisfied</button>
+        <div class="sv-options-container">
+            <button>Very Satisfied</button>
+            <button>Satisfied</button>
+            <button>Neutral</button>
+            <button>Dissatisfied</button>
+            <button>Very Dissatisfied</button>
         </div>
 
-        **1. [second question here]?**
+        **2. [second question here]?**
 
-        <div style="display: flex; justify-content: space-around; margin-bottom: 10px;">
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Very Satisfied</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Satisfied</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Neutral</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Dissatisfied</button>
-        <button style="border: 2px solid #6C47FF; background: white; color: #6C47FF; border-radius: 5px; padding: 5px; padding-left: 10px; padding-right: 10px;">Very Dissatisfied</button>
+        <div class="sv-options-container">
+            <button>Very Satisfied</button>
+            <button>Satisfied</button>
+            <button>Neutral</button>
+            <button>Dissatisfied</button>
+            <button>Very Dissatisfied</button>
         </div>
 
         --NOTIFY_SECTION_HERE--
-
         \n\n
 
         The expects that template to make the application work
@@ -110,10 +109,11 @@ def invoke(query: HumanMessage, memory: ChatMessageHistory):
     })
 
     ai_message = AIMessage(response["output"], id=str(uuid.uuid4()))
+    ai_message.additional_kwargs.setdefault("metadata", {})
 
     if ai_message.content.strip().endswith(SUFFIX_ID_FOR_CTA):
         ai_message.content = ai_message.content.strip()[:-len(SUFFIX_ID_FOR_CTA)]
-        ai_message.additional_kwargs.setdefault("metadata", {})["metadata"] = {
+        ai_message.additional_kwargs["metadata"] = {
             "agent": "survey",
             "response_type": "survey"
         }

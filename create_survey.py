@@ -19,6 +19,33 @@ authenticator = Authenticate(
     cookie_expiry_days=st.secrets["cookie"]["expiry_days"]
 )
 
+st.markdown(
+    """
+<style>
+    .sv-options-container {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 5px;
+    }
+
+    .sv-options-container button {
+        cursor: default;
+        border: 1px solid #6C47FF;
+        outline: none;
+        background-color: #fff;
+        border-radius: 6px;
+        padding: 4px 10px;
+        color: #6C47FF;
+    }
+    .spacer {
+    margin-top: 10px;
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+
 
 name, authentication_status, username = authenticator.login('Login', 'main')
 
@@ -47,23 +74,26 @@ def render():
                 st.markdown(message.content, unsafe_allow_html=True)
 
                 if message.additional_kwargs.get("metadata") and message.additional_kwargs["metadata"].get("response_type") == "survey":
-                    col1, col2 = st.columns([10, 2])
-            
-                    with col1:
-                        st.markdown('<p class="notification-text">Notify employees about this survey</p>', 
-                                unsafe_allow_html=True)
-                    
-                    with col2:
-                        if st.button("Notify", key=message.id):
-                            print("clicked")
-                            notify_message = HumanMessage(content="notify employees")
-                            notify_message.additional_kwargs.setdefault("metadata", {})["hidden"] = True
-                            assistant = survey_builder.invoke(
-                                query=notify_message, 
-                                memory=memory
-                            )
+                    st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
 
-                            display_message(assistant)
+                    with st.container(border=True):
+                        col1, col2 = st.columns([10, 2])
+                
+                        with col1:
+                            st.markdown('<p class="notification-text">Notify employees about this survey</p>', 
+                                    unsafe_allow_html=True)
+                        
+                        with col2:
+                            if st.button("Notify", key=message.id, type="primary"):
+                                notify_message = HumanMessage(content="notify employees")
+                                notify_message.additional_kwargs.setdefault("metadata", {})
+                                notify_message.additional_kwargs["metadata"]["hidden"] = True
+                                assistant = survey_builder.invoke(
+                                    query=notify_message, 
+                                    memory=memory
+                                )
+
+                                display_message(assistant)
 
 
     with message_container:
