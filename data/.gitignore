@@ -1,3 +1,4 @@
-memory.json
-survey_memory.json
-survey_taker.json
+
+*
+!.gitignore
+!accounts.json

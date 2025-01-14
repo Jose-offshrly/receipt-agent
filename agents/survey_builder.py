@@ -20,7 +20,7 @@ system_prompt = """
         4. Make it clean and readable\n\n
 
         Generation of survey question instructions:\n
-        1. Generate 10 or more survey questions that is related to topic given by user. The number of questions is dynamic just make sure that you cover all aspects so that management can gather as much as info to the employee
+        1. Generate atleast 10 or more survey questions that is related to topic given by user at all times. Make sure that you cover all aspects so that management can gather as much as info to the employee
         2. Make sure the question is relevant and helpful. Remember that your purpose for creating survey is to help the employee and the company assess the raised concern. So that the management can come up with solution
         3. User is expected to add one question at a time unless specified in the query, add only one
         4. Always return the whole updated form in your response\n\n
