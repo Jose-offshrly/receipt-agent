@@ -12,156 +12,69 @@ from config import config
 from utils import parse_receipt
 from agents import receipt as receipt_agent
 from services.xero import load_accounts
+from streamlit_authenticator import Authenticate
 
-accounts = load_accounts()
+authenticator = Authenticate(
+    names=st.secrets["credentials"]["names"],
+    usernames=st.secrets["credentials"]["usernames"],
+    passwords=st.secrets["credentials"]["passwords"],
+    cookie_name=st.secrets["cookie"]["name"],
+    key=st.secrets["cookie"]["key"],
+    cookie_expiry_days=st.secrets["cookie"]["expiry_days"]
+)
 
-active_context = ""
-
-
-memory = FileChatMessageHistory("data/memory.json")
-DEFAULT_CATEGORY = "Categorize to an account"
-
-
-if "message_id" not in st.session_state:
-    st.session_state.message_id = 1
-
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
+name, authentication_status, username = authenticator.login('Login', 'main')
 
 
-message_container = st.container(height=700, border=False)
-
-
-def handle_category_select(category):
-    if not category or category == DEFAULT_CATEGORY:
-        return
+def render():
+    memory = FileChatMessageHistory(f"data/{username}_receipt_memory.json")
     
-    message = HumanMessage(content=category, id=str(uuid.uuid4()))
-    message.additional_kwargs.setdefault("metadata", {})
+    with st.sidebar:
+        st.title("Receipt Chatbot")
+        st.text("Make sure to clear chat, to save tokens")
 
-    # display_message(message) //add metadata
-    message.response_metadata = {
-        "hidden": True
-    }
-    message.additional_kwargs["metadata"] = {
-        "hidden": True
-    }
+        def clear():
+            if memory:
+                memory.clear()
+        st.button("Clear Chat", on_click=clear)
 
-    # memory.add_message(message=message)
+        st.divider()
 
-    assistant = receipt_agent.invoke(
-        query=message, 
-        memory=memory,
-        active_context=active_context
-    )
+    authenticator.logout('Logout', 'sidebar')
 
-    display_message(assistant)
+    accounts = load_accounts()
+
+    active_context = ""
 
 
-
-def display_message(message: BaseMessage):
-    with message_container:
-        with st.chat_message(message.type):
-            if message.additional_kwargs.get("attachment"):
-                st.image(message.additional_kwargs.get("attachment")["image_url"]["url"], width=300)
-            else:
-                st.markdown(message.content)
-                if message.type == "ai" and message.response_metadata.get("category") == "NOT_SET":
-                    form_key = f"{message.id}"  # Use message ID for unique form key
-                    with st.form(form_key):
-                        selected_category = st.selectbox(
-                            'Select an option:',
-                            [DEFAULT_CATEGORY, *sorted(accounts.keys(), key=lambda x: x.split(" - ", 1)[1])],
-                            label_visibility="hidden"
-                        )
-
-                        action_col1, action_col2 = st.columns([8, 2], gap="medium")
-                        with action_col1:
-                            st.text("Please click the confirm button to finalize the receipt submission to Xero")
-                        with action_col2:
-                            submitted = st.form_submit_button("Confirm")
-                            if submitted:
-                                handle_category_select(selected_category)
+    DEFAULT_CATEGORY = "Categorize to an account"
 
 
+    if "message_id" not in st.session_state:
+        st.session_state.message_id = 1
 
-with message_container:
-    for message in memory.messages:
-        if not message.response_metadata.get("hidden"):
-            display_message(message)
-
-
-
-# For displaying query input
-col1, col2 = st.columns([1,12], gap="medium")
+    if "uploaded_file" not in st.session_state:
+        st.session_state.uploaded_file = None
 
 
-def handle_upload_change():
-    if st.session_state.uploaded_img:
-        st.session_state.uploaded_file = st.session_state.uploaded_img
+    message_container = st.container(height=700, border=False)
 
-        response = parse_receipt(st.session_state.uploaded_file)
-       
-        # Process response
-        if response is None:
-            st.error(f"Failed to process file: {response.status_code} - {response.text}")
-        else:
-            active_context = json.dumps(response["receipt"])
-
-     
-            img_type = st.session_state.uploaded_file.type
-            raw_img = Image.open(st.session_state.uploaded_file)
-            image_base64 = get_image_base64(raw_img)
-
-            message = HumanMessage(
-                content="", 
-                id=str(uuid.uuid4()),
-                additional_kwargs={
-                    "attachment": {
-                        "file_id": str(uuid.uuid4()),
-                        "type": "receipt",
-                        "image_url": {"url": f"data:{img_type};base64,{image_base64}"}
-                    }
-                }
-            )
-
-            display_message(message)
-
-            assistant = receipt_agent.invoke(
-                query=message, 
-                memory=memory,
-                active_context=active_context
-            )
-
-            display_message(assistant)
-            st.session_state.uploaded_file = None
-
-with col1:
-    with st.popover(":paperclip:"):
-        st.file_uploader(
-            "Upload an image", 
-            type=["png", "jpg", "jpeg"], 
-            accept_multiple_files=False,
-            key="uploaded_img",
-            on_change=handle_upload_change
-        )
-
-
-
-
-
-
-####################################### Text Query
-
-with col2:
-    query = st.chat_input("Say something")
-
-    if query:
-
-        message = HumanMessage(content=query, id=str(uuid.uuid4()))
+    def handle_category_select(category):
+        if not category or category == DEFAULT_CATEGORY:
+            return
+        
+        message = HumanMessage(content=category, id=str(uuid.uuid4()))
         message.additional_kwargs.setdefault("metadata", {})
 
-        display_message(message)
+        # display_message(message) //add metadata
+        message.response_metadata = {
+            "hidden": True
+        }
+        message.additional_kwargs["metadata"] = {
+            "hidden": True
+        }
+
+        # memory.add_message(message=message)
 
         assistant = receipt_agent.invoke(
             query=message, 
@@ -173,67 +86,127 @@ with col2:
 
 
 
+    def display_message(message: BaseMessage):
+        with message_container:
+            with st.chat_message(message.type):
+                if message.additional_kwargs.get("attachment"):
+                    st.image(message.additional_kwargs.get("attachment")["image_url"]["url"], width=300)
+                else:
+                    st.markdown(message.content)
+                    if message.type == "ai" and message.response_metadata.get("category") == "NOT_SET":
+                        form_key = f"{message.id}"  # Use message ID for unique form key
+                        with st.form(form_key):
+                            selected_category = st.selectbox(
+                                'Select an option:',
+                                [DEFAULT_CATEGORY, *sorted(accounts.keys(), key=lambda x: x.split(" - ", 1)[1])],
+                                label_visibility="hidden"
+                            )
+
+                            action_col1, action_col2 = st.columns([8, 2], gap="medium")
+                            with action_col1:
+                                st.text("Please click the confirm button to finalize the receipt submission to Xero")
+                            with action_col2:
+                                submitted = st.form_submit_button("Confirm")
+                                if submitted:
+                                    handle_category_select(selected_category)
+
+
+
+    with message_container:
+        for message in memory.messages:
+            if not message.response_metadata.get("hidden"):
+                display_message(message)
+
+
+
+    # For displaying query input
+    col1, col2 = st.columns([1,12], gap="medium")
+
+
+    def handle_upload_change():
+        if st.session_state.uploaded_img:
+            st.session_state.uploaded_file = st.session_state.uploaded_img
+
+            response = parse_receipt(st.session_state.uploaded_file)
+        
+            # Process response
+            if response is None:
+                st.error(f"Failed to process file: {response.status_code} - {response.text}")
+            else:
+                active_context = json.dumps(response["receipt"])
+
+        
+                img_type = st.session_state.uploaded_file.type
+                raw_img = Image.open(st.session_state.uploaded_file)
+                image_base64 = get_image_base64(raw_img)
+
+                message = HumanMessage(
+                    content="", 
+                    id=str(uuid.uuid4()),
+                    additional_kwargs={
+                        "attachment": {
+                            "file_id": str(uuid.uuid4()),
+                            "type": "receipt",
+                            "image_url": {"url": f"data:{img_type};base64,{image_base64}"}
+                        }
+                    }
+                )
+
+                display_message(message)
+
+                assistant = receipt_agent.invoke(
+                    query=message, 
+                    memory=memory,
+                    active_context=active_context
+                )
+
+                display_message(assistant)
+                st.session_state.uploaded_file = None
+
+    with col1:
+        with st.popover(":paperclip:"):
+            st.file_uploader(
+                "Upload an image", 
+                type=["png", "jpg", "jpeg"], 
+                accept_multiple_files=False,
+                key="uploaded_img",
+                on_change=handle_upload_change
+            )
 
 
 
 
 
 
+    ####################################### Text Query
+
+    with col2:
+        query = st.chat_input("Say something")
+
+        if query:
+
+            message = HumanMessage(content=query, id=str(uuid.uuid4()))
+            message.additional_kwargs.setdefault("metadata", {})
+
+            display_message(message)
+
+            assistant = receipt_agent.invoke(
+                query=message, 
+                memory=memory,
+                active_context=active_context
+            )
+
+            display_message(assistant)
+
+def main():
+    if authentication_status:
+        render()
+
+    elif authentication_status == False:
+        st.error('Username/password is incorrect')
+    elif authentication_status == None:
+        st.warning('Please enter your username and password')
 
 
-
-
-# ECS
-
-        # use cases
-        # 1. Enter general topic
-        # 2. Parse -> categorize -> save
-        # 3. Automatically categorize if not specified
-        # 4. parse and save automatically
-        # 5. Follow up question (category id)
-
-# attach image
-# create tool for saving in file
-
-        # if there is image upload stick to that context unless general question
-
-# attach id to save context (mess)
-
-# use cases
-# 1. Enter general topic
-# 2. Parse -> categorize -> save
-# 3. Automatically categorize if not specified
-# 4. parse and save automatically
-# 5. Follow up question (category id)
-
-
-# ask category details
-# https://drive.google.com/uc?export=download&id=1Jy33av6Zcl_OeyU1SIhArrher7zdywJK
-
-
-
-
-
-
-# PROBLEMS ENCOUNTERED
-# OPENAI HAS H=SHORT TIMEOUT FOR DONWLOADING IMAGE
-
-
-
-
-
-
-
-
-
-        # conversation id
-
-        # create a file id (add description on what the image is for accurate retrieval)
-        #     store structured and general descriptions of image
-        #     The following steps may occur:
-        #     Object detection: Recognizes items, text, or elements in the image (e.g., logos, icons).
-        #     Text extraction: If text exists in the image, an OCR (Optical Character Recognition) system extracts it.
-        #     Layout analysis: Determines how elements are visually organized (e.g., the text, images, and shapes on a business card).
-        #     Semantic understanding: Models interpret content meaning, such as "this is a business card," and break it into logical sections.
-        # then when a message has file id make it as reference as well (perform retrieval as well)
-        # (if the message history has file id (agent will retrieve it))
+if __name__ == "__main__":
+    main()
