@@ -60,6 +60,7 @@ def render():
     message_container = st.container(height=700, border=False)
 
     def handle_category_select(category):
+        print("CLICKED", category)
         if not category or category == DEFAULT_CATEGORY:
             return
         
@@ -94,21 +95,35 @@ def render():
                 else:
                     st.markdown(message.content)
                     if message.type == "ai" and message.response_metadata.get("category") == "NOT_SET":
-                        form_key = f"{message.id}"  # Use message ID for unique form key
-                        with st.form(form_key):
-                            selected_category = st.selectbox(
-                                'Select an option:',
-                                [DEFAULT_CATEGORY, *sorted(accounts.keys(), key=lambda x: x.split(" - ", 1)[1])],
-                                label_visibility="hidden"
-                            )
+                        # Create a unique key that includes both message ID and a session counter
+                        if 'form_counter' not in st.session_state:
+                            st.session_state.form_counter = 0
+                        if 'scategory' not in st.session_state:
+                            st.session_state.scategory = DEFAULT_CATEGORY
+
+                        st.session_state.form_counter += 1
+                        
+                        form_key = f"form_{message.id}_{st.session_state.form_counter}"
+                        
+                        st.session_state.scategory = st.selectbox(
+                            'Select an option:',
+                            [DEFAULT_CATEGORY, *sorted(accounts.keys(), key=lambda x: x.split(" - ", 1)[1])],
+                            label_visibility="hidden"
+                        )
+                        with st.form(key=form_key):
 
                             action_col1, action_col2 = st.columns([8, 2], gap="medium")
                             with action_col1:
                                 st.text("Please click the confirm button to finalize the receipt submission to Xero")
                             with action_col2:
-                                submitted = st.form_submit_button("Confirm")
-                                if submitted:
-                                    handle_category_select(selected_category)
+                                print(st.session_state.scategory)
+                                st.form_submit_button(
+                                    "Confirm",
+                                    on_click=lambda : handle_category_select(st.session_state.scategory)
+                                )
+                                
+                            # Move this outside the action_col2 but inside the form
+                            
 
 
 
