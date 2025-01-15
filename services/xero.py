@@ -44,7 +44,11 @@ def get_tax(name: str):
     params = urlencode({"where": f'name=="{name}"'})
     url = f"{config.XERO_V2_BASE_URL}/TaxRates?{params}"
 
-    token = load_credentials()
+    try:
+        token = load_credentials()
+    except:
+        # fallback incase auth file not yet setup
+        token = generate_token(config.XERO_REFRESH_TOKEN)
 
     try:
         headers = {
@@ -122,7 +126,7 @@ def create_tax(name: str, rate: float):
 def get_or_create_tax_rate(name, rate):
 
     tax = get_tax(name)
-    if len(tax["TaxRates"]) > 0:
+    if tax and len(tax["TaxRates"]) > 0:
         return tax
     else:
         print("Tax Rate does not exist, creating...")

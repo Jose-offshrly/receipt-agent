@@ -1,4 +1,4 @@
-import requests, json
+import requests, json, os
 from requests.auth import HTTPBasicAuth
 from xero_python.exceptions.http_status_exceptions import AccountingBadRequestException
 from config import config
@@ -23,9 +23,9 @@ def generate_token(refresh_token: str) -> Auth:
 
     if response.status_code == 200:
         token_data = response.json()
-        print(token_data)
         auth = Auth(**token_data)
 
+        os.makedirs("credentials", exist_ok=True)
         with open("credentials/auth.json", "w") as f:
             json.dump(auth.model_dump(), f, indent=4)
 

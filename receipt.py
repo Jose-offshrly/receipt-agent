@@ -36,10 +36,14 @@ def handle_category_select(category):
     if not category or category == DEFAULT_CATEGORY:
         return
     
-    message = HumanMessage(category, id=random_alphanumeric())
+    message = HumanMessage(content=category, id=str(uuid.uuid4()))
+    message.additional_kwargs.setdefault("metadata", {})
 
     # display_message(message) //add metadata
     message.response_metadata = {
+        "hidden": True
+    }
+    message.additional_kwargs["metadata"] = {
         "hidden": True
     }
 
@@ -63,8 +67,8 @@ def display_message(message: BaseMessage):
             else:
                 st.markdown(message.content)
                 if message.type == "ai" and message.response_metadata.get("category") == "NOT_SET":
-                    form_key = f"form_{message.id}"  # Use message ID for unique form key
-                    with st.form(key=form_key):
+                    form_key = f"{message.id}"  # Use message ID for unique form key
+                    with st.form(form_key):
                         selected_category = st.selectbox(
                             'Select an option:',
                             [DEFAULT_CATEGORY, *sorted(accounts.keys(), key=lambda x: x.split(" - ", 1)[1])],
@@ -97,7 +101,7 @@ def handle_upload_change():
         st.session_state.uploaded_file = st.session_state.uploaded_img
 
         response = parse_receipt(st.session_state.uploaded_file)
-
+       
         # Process response
         if response is None:
             st.error(f"Failed to process file: {response.status_code} - {response.text}")
@@ -111,7 +115,7 @@ def handle_upload_change():
 
             message = HumanMessage(
                 content="", 
-                id=random_alphanumeric(),
+                id=str(uuid.uuid4()),
                 additional_kwargs={
                     "attachment": {
                         "file_id": str(uuid.uuid4()),
@@ -154,7 +158,8 @@ with col2:
 
     if query:
 
-        message = HumanMessage(content=query, id=random_alphanumeric(length=20))
+        message = HumanMessage(content=query, id=str(uuid.uuid4()))
+        message.additional_kwargs.setdefault("metadata", {})
 
         display_message(message)
 

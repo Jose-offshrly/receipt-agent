@@ -24,9 +24,9 @@ class ReceiptSchema(BaseModel):
     receipt: ReceiptLLM = Field(description="Extracted receipt containing necesary fields to insert on xero")
     category: str = Field(description="User inputted category in this format [account code] - [account name], example 402 - Entertainment")
 
-@tool(args_schema=ReceiptSchema)
-def save_receipt_to_xero(receipt, category) -> str:
-    """This tool accepts receipt and category then save to xero management app"""
+@tool
+def save_receipt_to_xero(receipt: ReceiptLLM, category: str) -> str:
+    """This tool accepts receipt and category then save to xero management app. category is expected in this format [account code] - [account name], example 402 - Entertainment"""
 
     try:
         receipt = receipt.model_dump()

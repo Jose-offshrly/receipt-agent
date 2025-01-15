@@ -38,14 +38,32 @@ def save_uploaded_file(uploaded_file, save_dir):
 
 def parse_receipt(uploaded_file):
     import requests
+    from time import sleep
 
     api_url = f"{config.TRANSCRIPTION_API}/receipt"
-    
-    # Prepare file and data
     files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
-
-    try: 
-        response = requests.post(api_url, files=files)
-        return response.json()
-    except BaseException:
-        return None
+    
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        try:
+            response = requests.post(api_url, files=files)
+            print(f"Attempt {retry_count + 1} status code:", response.status_code)
+            
+            if response.ok:
+                return response.json()
+            
+            response.raise_for_status()
+            
+        except BaseException as e:
+            retry_count += 1
+            print(f"Error on attempt {retry_count}:", e)
+            
+            if retry_count == max_retries:
+                print("All retry attempts failed")
+                return None
+                
+            sleep(2 ** retry_count)  # Exponential backoff: 2, 4, 8 seconds
+    
+    return None
